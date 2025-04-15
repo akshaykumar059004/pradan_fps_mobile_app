@@ -3,6 +3,10 @@ import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, Alert } fro
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { FontAwesome } from '@expo/vector-icons';
+import axios from "axios";
+import Constants from "expo-constants";
+
+const url = Constants.expoConfig.extra.API_URL;
 
 
 export default function LoginScreen() {
@@ -22,18 +26,25 @@ export default function LoginScreen() {
   }, []);
 
   const handleLogin = async () => {
-    const storedPassword = await AsyncStorage.getItem("password");
-    const defaultPassword = "123"; // default if none is set
-  
-    if (username.trim() === "123" && password.trim() === (storedPassword || defaultPassword)) {
+    //TO-DO :fetch username and password from the state
+    //const storedPassword = await AsyncStorage.getItem("password");
+    //const defaultPassword = "123"; // default if none is set
+
+    //username.trim() === "123" && password.trim() === (storedPassword || defaultPassword)
+    //console.log("Start of axios request");
+    const response = await axios.post(`${url}/api/users/authUser`,{username, password}); //TO-DO: send an axios request to the server to check if the username and password are correct` 
+    console.log(response.data); // Log the response data);
+    //username.trim() === "123" && password.trim() === (storedPassword || defaultPassword)
+    if (response.data === 1) { //TO-DO: send an axios request to the server to check if the username and password are correct
       try {
-        await AsyncStorage.setItem("user", "loggedIn");
+        await AsyncStorage.setItem("password", password); //if correct, save the user_id in AsyncStorage and navigate to dashboard
+        await AsyncStorage.setItem("username", username); //if correct, save the user_id in AsyncStorage and navigate to dashboard
         router.replace("/dashboard");
       } catch (error) {
-        Alert.alert("Error", "Failed to save login state.");
+        Alert.alert("Error", "Failed to save login state."); 
       }
     } else {
-      Alert.alert("Invalid Credentials", "Please enter valid ID and Password");
+      Alert.alert("Invalid Credentials", "Please enter valid ID and Password"); //if incorrect, show an alert
     }
   };
   
