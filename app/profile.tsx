@@ -4,7 +4,10 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from '@react-navigation/native';
+import axios from "axios";
+import Constants from "expo-constants";
 
+const url = Constants.expoConfig.extra.API_URL;
 
 export default function Profile() {
   const router = useRouter();
@@ -18,7 +21,7 @@ export default function Profile() {
   const [confirmPassword, setConfirmPassword] = useState("");
 
   const handleChangePassword = async () => {
-    const storedPassword = await AsyncStorage.getItem("password") || "123";
+    const storedPassword = await AsyncStorage.getItem("password");
   
     if (oldPassword !== storedPassword) {
       Alert.alert("Error", "Old password is incorrect.");
@@ -34,9 +37,22 @@ export default function Profile() {
       Alert.alert("Error", "New passwords and Confirm Password do not match.");
       return;
     }
-  
-    await AsyncStorage.setItem("password", newPassword);
-    Alert.alert("Success", "Password changed successfully.");
+      //console.log("Username",await AsyncStorage.getItem("username"));
+      const username = await AsyncStorage.getItem("username");
+      console.log("axios started");
+      const response = await axios.put(`${url}/api/users/changePassword`, {
+      username,
+     oldPassword,
+      newPassword,
+    });
+
+    //console.log("Password change:",response.data); // Log the response data
+
+    if(response.data === 1){
+     //await AsyncStorage.setItem("password", newPassword);
+     Alert.alert("Success", "Password changed successfully.");
+    }
+
     setShowPasswordFields(false);
     setOldPassword("");
     setNewPassword("");
