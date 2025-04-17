@@ -1,5 +1,8 @@
-import { useEffect, useState } from "react";
+//[1]: Insert link here for status codes and names
+
+import { useEffect, useMemo, useState } from "react";
 import { useUserStore } from '../storage/userDataStore';
+import { FormStatus_totalCount, FormStatus_todayCount } from "../storage/useFormStore";
 import {
   View,
   Text,
@@ -11,18 +14,22 @@ import {
   Pressable,
   Animated,
   FlatList,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import PagerView from 'react-native-pager-view';
 import React from "react";
 import { MaterialIcons } from "@expo/vector-icons";
-//import axios from "axios";
+import axios from "axios";
 import Constants from "expo-constants";
+
 //import AsyncStorage from "@react-native-async-storage/async-storage";
 const DashboardScreen: React.FC = () => {
   const url = Constants.expoConfig.extra.API_URL;
   
   const { user} = useUserStore();
+  const { setStatus_totalCount, resetStatus_totalCount, status_total } = FormStatus_totalCount(); //global Zustand store for total count of forms
+  const {setStatus_todayCount, resetStatus_todayCount, status_today } = FormStatus_todayCount(); //global Zustand store for today's count of forms
   const [modalVisible, setModalVisible] = useState(false);
   const [activeTab, setActiveTab] = useState('Today');
   const slideAnim = useState(new Animated.Value(0))[0];
@@ -33,37 +40,208 @@ const DashboardScreen: React.FC = () => {
     'Dashboard(Post)'
   ];
 
-  //TO-DO: fetch the dashboard data from the server using the user_id and set it in the state
-  const dashboardData = [
+  const fetchDashboardData = async (userId: number) => {
+    try {
+      const dashborad_status_count_response_total = await axios.get(`${url}/api/dashboard/getTotalFormsStatusCount/${userId}`);
+      const dashborad_status_count_response_today = await axios.get(`${url}/api/dashboard/getTodayFormsStatusCount/${userId}`);
+     // console.log("Dashboard Status Count:", dashborad_status_count_response_today.data);
+
+     //convert the array of objects to a map for easy access
+      const statusCountMap_total = Object.fromEntries(
+        dashborad_status_count_response_total.data.map(item => [item.status, item.count])
+      );
+
+      const statusCountMap_today = Object.fromEntries(
+        dashborad_status_count_response_today.data.map(item => [item.status, item.count])
+      );
+      
+      //Refer the documentation[1] for the status codes and the corresponding status names
+      setStatus_totalCount({
+        totalCount_pre: statusCountMap_total[1]+statusCountMap_total[2]+statusCountMap_total[3]+statusCountMap_total[4],
+        pendingCount_pre: statusCountMap_total[1]+statusCountMap_total[2],
+        rejectedCount_pre: statusCountMap_total[3],
+        approvedCount_pre: statusCountMap_total[4],
+        totalCount_post: statusCountMap_total[6]+statusCountMap_total[7]+statusCountMap_total[8]+statusCountMap_total[9],
+        pendingCount_post: statusCountMap_total[7]+statusCountMap_total[6],
+        changerequestedCount_post: statusCountMap_total[8],
+        approvedCount_post: statusCountMap_total[9],
+        hasfetched_total: true,
+      });
+
+      setStatus_todayCount({
+        totalCount_pre: statusCountMap_today[1]+statusCountMap_today[2]+statusCountMap_today[3]+statusCountMap_today[4],
+        pendingCount_pre: statusCountMap_today[1]+statusCountMap_today[2],
+        rejectedCount_pre: statusCountMap_today[3],
+        approvedCount_pre: statusCountMap_today[4],
+        totalCount_post: statusCountMap_today[6]+statusCountMap_today[7]+statusCountMap_today[8]+statusCountMap_today[9],
+        pendingCount_post: statusCountMap_today[7]+statusCountMap_today[6],
+        changerequestedCount_post: statusCountMap_today[8],
+        approvedCount_post: statusCountMap_today[9],
+        hasfetched_total: true,
+      });
+    } catch (error) {
+      console.error("Error fetching dashboard data:", error);
+    }
+  }
+  useEffect(() => {
+    if (user?.id) {
+      fetchDashboardData(user.id);
+    }
+    return () => {
+      resetStatus_todayCount();
+      resetStatus_totalCount();
+    };
+  }, [user?.id]);
+
+  if ((status_total?.totalCount_pre === 0 && !status_total?.hasfetched_total)) {
+    return <ActivityIndicator />;
+  }
+
+
+  const dashboardDatapre_total = [
     {
       id: '1',
       label: 'Total Submitted',
       icon: 'assignment',
       color: '#4a7744',
-      count: 120,
+      count: status_total.totalCount_pre,
     },
     {
       id: '2',
       label: 'Pending Forms',
       icon: 'hourglass-empty',
       color: '#f4a261',
-      count: 45,
+      count: status_total.pendingCount_pre,
     },
     {
       id: '3',
       label: 'Rejected Forms',
       icon: 'cancel',
       color: '#e63946',
-      count: 15,
+      count: status_total.rejectedCount_pre,
     },
     {
       id: '4',
       label: 'Approved Forms',
       icon: 'check-circle',
       color: '#2a9d8f',
-      count: 60,
+      count: status_total.approvedCount_pre,
     },
   ];
+
+  const dashboardDatapost_total = [
+    {
+      id: '1',
+      label: 'Total Submitted',
+      icon: 'assignment',
+      color: '#4a7744',
+      count: status_total.totalCount_post,
+    },
+    {
+      id: '2',
+      label: 'Pending Forms',
+      icon: 'hourglass-empty',
+      color: '#f4a261',
+      count: status_total.pendingCount_post,
+    },
+    {
+      id: '3',
+      label: 'Rejected Forms',
+      icon: 'cancel',
+      color: '#e63946',
+      count: status_total.changerequestedCount_post,
+    },
+    {
+      id: '4',
+      label: 'Approved Forms',
+      icon: 'check-circle',
+      color: '#2a9d8f',
+      count: status_total.approvedCount_post,
+    },
+  ];
+
+  const dashboardDatapre_today = [
+    {
+      id: '1',
+      label: 'Total Submitted',
+      icon: 'assignment',
+      color: '#4a7744',
+      count: status_today.totalCount_pre,
+    },
+    {
+      id: '2',
+      label: 'Pending Forms',
+      icon: 'hourglass-empty',
+      color: '#f4a261',
+      count: status_today.pendingCount_pre,
+    },
+    {
+      id: '3',
+      label: 'Rejected Forms',
+      icon: 'cancel',
+      color: '#e63946',
+      count: status_today.rejectedCount_pre,
+    },
+    {
+      id: '4',
+      label: 'Approved Forms',
+      icon: 'check-circle',
+      color: '#2a9d8f',
+      count: status_today.approvedCount_pre,
+    },
+  ];
+
+  const dashboardDatapost_today = [
+    {
+      id: '1',
+      label: 'Total Submitted',
+      icon: 'assignment',
+      color: '#4a7744',
+      count: status_today.totalCount_post,
+    },
+    {
+      id: '2',
+      label: 'Pending Forms',
+      icon: 'hourglass-empty',
+      color: '#f4a261',
+      count: status_today.pendingCount_post,
+    },
+    {
+      id: '3',
+      label: 'Rejected Forms',
+      icon: 'cancel',
+      color: '#e63946',
+      count: status_today.changerequestedCount_post,
+    },
+    {
+      id: '4',
+      label: 'Approved Forms',
+      icon: 'check-circle',
+      color: '#2a9d8f',
+      count: status_today.approvedCount_post,
+    },
+  ];
+
+  //Assign data to the currentData variable based on the pageIndex and activeTab
+  //pageIndex = 0 for Pre and pageIndex = 1 for Post
+  //activeTab = Today or Total
+  const currentData = useMemo(() => {
+    // console.log("Page Index:", pageIndex);
+    // console.log("Active Tab:", activeTab);
+    if (pageIndex === 0) {
+      return activeTab === 'Today'
+        ? dashboardDatapre_today
+        : dashboardDatapre_total;
+    } else {
+      return activeTab === 'Today'
+        ? dashboardDatapost_today
+        : dashboardDatapost_total;
+    }
+  }, [pageIndex, activeTab]);
+
+ // console.log("Current Data:", currentData);
+
+
    const toggleTab = (tab: string) => {
       setActiveTab(tab);
       Animated.timing(slideAnim, {
@@ -76,6 +254,8 @@ const DashboardScreen: React.FC = () => {
       inputRange: [0, 1],
       outputRange: [0, 80],
     });
+
+    const router = useRouter();
      const renderCard = ({ item }: any) => {
         const handleCardPress = () => {
           switch (item.id) {
@@ -103,36 +283,8 @@ const DashboardScreen: React.FC = () => {
             </TouchableOpacity>
             );
           };
-  const router = useRouter();
-  const [showFormModal, setShowFormModal] = useState(false);
+  
 
-const renderCard2 = ({ item }: any) => {
-    const handleCardPress = () => {
-      switch (item.id) {
-        case '1':
-          router.push('/totalSubmit');
-          break;
-        case '2':
-          router.push('/pending');
-          break;
-        case '3':
-          router.push('/rejected');
-          break;
-        case '4':
-          router.push('/approved');
-          break;
-        default:
-          break;
-      }
-    };
-    return(
-    <TouchableOpacity style={styles.card} onPress={handleCardPress}>
-      <MaterialIcons name={item.icon} size={36} color={item.color} />
-      <Text style={styles.count}>{item.count}</Text>
-      <Text style={styles.cardLabel}>{item.label}</Text>
-    </TouchableOpacity>
-    );
-  };
   return (
       <SafeAreaView style={styles.container}>
         <Image
@@ -141,7 +293,7 @@ const renderCard2 = ({ item }: any) => {
           resizeMode="contain"
         />
   
-        <Pressable onPress={() => router.replace('/profile')} style={({ pressed }) => [styles.profileCard]}>
+        <Pressable onPress={() => router.push('/profile')} style={({ pressed }) => [styles.profileCard]}>
           <Image
             source={require('../assets/images/PROFILE.jpg')} //fetch image from the server based on the user_id
             style={styles.profileImage}
@@ -184,7 +336,7 @@ const renderCard2 = ({ item }: any) => {
          onPageSelected={(e) => setPageIndex(e.nativeEvent.position)}>
         <FlatList
         key='1'
-          data={dashboardData}
+          data={currentData}
           numColumns={2}
           renderItem={renderCard}
           keyExtractor={(item) => item.id}
@@ -193,9 +345,9 @@ const renderCard2 = ({ item }: any) => {
         />
         <FlatList
         key='2'
-          data={dashboardData}
+          data={currentData}
           numColumns={2}
-          renderItem={renderCard2}
+          renderItem={renderCard}
           keyExtractor={(item) => item.id}
           columnWrapperStyle={styles.row}
           contentContainerStyle={{ paddingBottom: 10 }}
