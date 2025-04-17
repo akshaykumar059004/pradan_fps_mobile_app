@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useUserStore } from '../storage/userDataStore';
 import {
   View,
   Text,
@@ -15,19 +16,24 @@ import { useRouter } from "expo-router";
 import PagerView from 'react-native-pager-view';
 import React from "react";
 import { MaterialIcons } from "@expo/vector-icons";
+//import axios from "axios";
+import Constants from "expo-constants";
+//import AsyncStorage from "@react-native-async-storage/async-storage";
 const DashboardScreen: React.FC = () => {
+  const url = Constants.expoConfig.extra.API_URL;
+  
+  const { user} = useUserStore();
   const [modalVisible, setModalVisible] = useState(false);
   const [activeTab, setActiveTab] = useState('Today');
   const slideAnim = useState(new Animated.Value(0))[0];
   const [pageIndex, setPageIndex] = useState(0);
   
-
-
   const pageTexts = [
     'Dashboard(Pre)',
     'Dashboard(Post)'
   ];
 
+  //TO-DO: fetch the dashboard data from the server using the user_id and set it in the state
   const dashboardData = [
     {
       id: '1',
@@ -137,13 +143,13 @@ const renderCard2 = ({ item }: any) => {
   
         <Pressable onPress={() => router.replace('/profile')} style={({ pressed }) => [styles.profileCard]}>
           <Image
-            source={require('../assets/images/PROFILE.jpg')}
+            source={require('../assets/images/PROFILE.jpg')} //fetch image from the server based on the user_id
             style={styles.profileImage}
           />
           <View style={styles.profileText}>
-            <Text style={styles.profileName}>Kaviyarasan G</Text>
-            <Text style={styles.profileDesignation}>Associate</Text>
-            <Text style={styles.profileEmail}>associative@pradan.net</Text>
+            <Text style={styles.profileName}>{user?.name}</Text> 
+            <Text style={styles.profileDesignation}>{user?.role}</Text>
+            <Text style={styles.profileEmail}>{user?.username}</Text>
           </View>
         </Pressable>
   

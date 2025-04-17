@@ -5,11 +5,14 @@ import { useRouter } from "expo-router";
 import { FontAwesome } from '@expo/vector-icons';
 import axios from "axios";
 import Constants from "expo-constants";
+import { useUserStore } from "@/storage/userDataStore";
 
 const url = Constants.expoConfig.extra.API_URL;
 
 
 export default function LoginScreen() {
+  //const { user, logout } = useUserStore();
+  const setUser = useUserStore((state) => state.setUser);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -25,20 +28,24 @@ export default function LoginScreen() {
     checkLogin();
   }, []);
 
-  const handleLogin = async () => {
-    //TO-DO :fetch username and password from the state
-    //const storedPassword = await AsyncStorage.getItem("password");
-    //const defaultPassword = "123"; // default if none is set
+  const fetchUserData = async (username) => {
+    
+    const response = await axios.get(`${url}/api/users/getUserData/${username}`);
+    setUser(response.data); 
+    setUser({username:response.data.email});// Save the user data in Zustand store
+    //console.log("User data:", response.data.email); // Log the response data
+    
+  };
 
-    //username.trim() === "123" && password.trim() === (storedPassword || defaultPassword)
-    //console.log("Start of axios request");
-    const response = await axios.post(`${url}/api/users/authUser`,{username, password}); //TO-DO: send an axios request to the server to check if the username and password are correct` 
-    console.log(response.data); // Log the response data);
-    //username.trim() === "123" && password.trim() === (storedPassword || defaultPassword)
-    if (response.data === 1) { //TO-DO: send an axios request to the server to check if the username and password are correct
+  const handleLogin = async () => {
+    const response = await axios.post(`${url}/api/users/authUser`,{username, password});
+    //console.log(response.data); // Log the response data);
+    
+    if (response.data === 1) { 
       try {
-        await AsyncStorage.setItem("password", password); //if correct, save the user_id in AsyncStorage and navigate to dashboard
-        await AsyncStorage.setItem("username", username); //if correct, save the user_id in AsyncStorage and navigate to dashboard
+        fetchUserData(username); 
+        //await AsyncStorage.setItem("user", "loggedIn"); // Save the login state in AsyncStorage
+        await AsyncStorage.setItem("password", password); //WARNING: this is not secure, use JWT
         router.replace("/dashboard");
       } catch (error) {
         Alert.alert("Error", "Failed to save login state."); 

@@ -6,10 +6,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from '@react-navigation/native';
 import axios from "axios";
 import Constants from "expo-constants";
+import { useUserStore } from "../storage/userDataStore";
 
 const url = Constants.expoConfig.extra.API_URL;
 
 export default function Profile() {
+  const { user, logout } = useUserStore();
   const router = useRouter();
   const navigation = useNavigation();
   const [showOldPass, setShowOldPass] = useState(false);
@@ -38,8 +40,8 @@ export default function Profile() {
       return;
     }
       //console.log("Username",await AsyncStorage.getItem("username"));
-      const username = await AsyncStorage.getItem("username");
-      console.log("axios started");
+      const username = user?.username;
+      //console.log("axios started");
       const response = await axios.put(`${url}/api/users/changePassword`, {
       username,
      oldPassword,
@@ -62,6 +64,7 @@ export default function Profile() {
 
   const handleLogout = async () => {
     await AsyncStorage.removeItem("user");
+    logout; // Clear user data from Zustand store
     router.replace("/");
   };
 
@@ -87,27 +90,27 @@ export default function Profile() {
           source={require("../assets/images/PROFILE.jpg")}
           style={styles.profileImage}
         />
-        <Text style={styles.name}>Kaviyarasan G</Text>
-        <Text style={styles.designation}>Field Executive</Text>
+        <Text style={styles.name}>{user?.name}</Text>
+        <Text style={styles.designation}>{user?.role}</Text>
 
         <View style={styles.detailRow}>
           <Text style={styles.label}>Email</Text>
-          <Text style={styles.value}>associative@pradan.net</Text>
+          <Text style={styles.value}>{user?.username}</Text>
         </View>
 
         <View style={styles.detailRow}>
           <Text style={styles.label}>Mobile</Text>
-          <Text style={styles.value}>+91 9876543210</Text>
+          <Text style={styles.value}>{user?.mobile}</Text>
         </View>
 
         <View style={styles.detailRow}>
           <Text style={styles.label}>Date of Joining</Text>
-          <Text style={styles.value}>02 April 2025</Text>
+          <Text style={styles.value}>{user?.date_of_joining}</Text>
         </View>
 
         <View style={styles.detailRow}>
           <Text style={styles.label}>Location</Text>
-          <Text style={styles.value}>Tamil Nadu</Text>
+          <Text style={styles.value}>{user?.location}</Text>
         </View>
 
         <View style={styles.detailRow}>
