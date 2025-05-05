@@ -14,20 +14,20 @@ export default function BankDetails() {
 
   const [form, setForm] = useState(
     data.bankDetails || {
-      accountHolderName: "",
-      accountNumber: "",
-      bankName: "",
-      branch: "",
-      ifscCode: "",
+      accountHolderName: "rewetettre",
+      accountNumber: "32334244",
+      bankName: "fgferefrde",
+      branch: "afesgbff",
+      ifscCode: "efw12334sf2214",
       farmerAgreed: "",
-      formStatus: "",
+      formStatus: 1,
       submittedFiles: {
-        patta: null,
-        idCard: null,
-        fmb: null,
-        farmerPhoto: null,
-        bankPassbook: null,
-        geoTag: null,
+        patta: "demopatta.pdf",
+        idCard: "demoidcard.pdf",
+        fmb: "demofmb.pdf",
+        farmerPhoto: ":demophoto.jpg",
+        bankPassbook: "demobankpassbook.pdf",
+        geoTag: "demogeotag.jpg",
       },
     }
   );

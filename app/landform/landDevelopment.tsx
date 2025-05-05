@@ -10,37 +10,49 @@ export default function LandDevelopment() {
 
   const [form, setForm] = useState(
     data.landDevelopment || {
-      sfNumber: "",
-      soilType: [],
-      landBenefit: "",
+      sfNumber: "12/21",
+      soilTypeCombined: "",
+      landBenefit: "1312",
       inspectionBy: "",
       approvedBy: "",
-      dateInspectionText: "",
-      dateApprovalText: "",
-      workType: [],
-      workTypeText: "",
-      proposalArea: "",
+      dateInspectionText: "1232-12-12",
+      dateApprovalText: "1212-12-11",
+      workTypeCombined: "",
+      workTypeText: "aefwefegwgwgrgw",
+      proposalArea: "1678",
       otherWorks: "",
-      latitude: "",
-      longitude: "",
-      pradanContribution: "",
-      farmerContribution: "",
-      totalEstimate: "",
+      latitude: "1213",
+      longitude: "12121",
+      pradanContribution: "1212",
+      farmerContribution: "1212",
+      totalEstimate: "121212",
     }
   );
 
   const updateField = (field: string, value: any) => {
+    
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const toggleCheckbox = (field: string, value: string) => {
-    setForm((prev) => ({
-      ...prev,
-      [field]: prev[field].includes(value)
-        ? prev[field].filter((item: string) => item !== value)
-        : [...prev[field], value],
-    }));
+ const toggleCheckbox = (field: string, value: string) => {
+    setForm((prev) => {
+      const currentValue = typeof prev[field] === "string" ? prev[field] : "";
+      const current = currentValue.split(",").filter(Boolean); // removes empty strings
+  
+      let updated;
+      if (current.includes(value)) {
+        updated = current.filter((item) => item !== value);
+      } else {
+        updated = [...current, value];
+      }
+  
+      return {
+        ...prev,
+        [field]: updated.join(","),
+      };
+    });
   };
+  
 
   const renderCheckboxGroup = (
     field: string,
@@ -106,7 +118,7 @@ export default function LandDevelopment() {
       </View>
 
       <Text style={styles.question}>32. Soil Type:</Text>
-      {renderCheckboxGroup("soilType", ["Red Soil", "Black Cotton", "Sandy Loam", "Laterite"])}
+      {renderCheckboxGroup("soilTypeCombined", ["Red Soil", "Black Cotton", "Sandy Loam", "Laterite"])}
 
       <Text style={styles.question}>33. Land to benefit (ha):</Text>
       <TextInput
@@ -139,7 +151,7 @@ export default function LandDevelopment() {
       />
 
       <Text style={styles.question}>38. Type of work proposed:</Text>
-      {renderCheckboxGroup("workType", [
+      {renderCheckboxGroup("workTypeCombined", [
         "Prosopis removal",
         "Redevelopment of eroded lands",
         "Silt application",

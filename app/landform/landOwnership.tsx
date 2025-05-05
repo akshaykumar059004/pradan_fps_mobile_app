@@ -12,34 +12,64 @@ export default function LandOwnership() {
     data.landOwnership || {
       landOwnershipType: "",
       hasWell: "",
-      areaIrrigated: "",
+      areaIrrigated: "221",
       irrigatedLand: {
-        rainfed: "",
-        tankfed: "",
-        wellIrrigated: "",
+        rainfed: "12",
+        tankfed: "13",
+        wellIrrigated: "12",
       },
-      pattaNumber: "",
-      totalArea: "",
-      taluk:"",
-      firka:"",
-      revenueVillage: "",
-      cropSeason: [],
+      pattaNumber: "21/12",
+      totalArea: "121",
+      livestockCombined:"",
+      taluk:"wfwef",
+      firka:"wefwrf",
+      revenueVillage: "vwrgvrgv",
+      irrigatedLandCombined:"",
+      cropSeasonCombined: "",
       livestock: {
-        goat:"",
-        sheep:"",
-        milchAnimals:"",
-        draught_animals:"",
-        poultry:"",
-        others:"",
+        goat:"12",
+        sheep:"11",
+        milchAnimals:"1",
+        draught_animals:"1",
+        poultry:"1",
+        others:"1",
       },
     }
   );
 
   const updateField = (field: string, value: any) => {
+    // Filter out non-numeric characters from the value
     setForm((prev) => ({ ...prev, [field]: value }));
   };
+  const handleLivestockChange = (field, value) => {
+    let filteredText = value.replace(/[^0-9]/g, '');
   
+    const updatedLivestock = {
+      ...form.livestock,
+      [field]: filteredText,
+    };
+     // Default any empty fields to 0 for the combined string
+     const goat = updatedLivestock.goat || '0';
+     const sheep = updatedLivestock.sheep || '0';
+     const milchAnimals = updatedLivestock.milchAnimals || '0';
+     const draught_animals = updatedLivestock.draught_animals || '0';
+     const poultry = updatedLivestock.poultry || '0';
+     const others = updatedLivestock.others || '0';
+   
+     const livestockCombinedField = `${goat},${sheep},${milchAnimals},${draught_animals},${poultry},${others}`;
+    updateField("livestockCombined", livestockCombinedField);
+     setForm((prev) => ({
+       ...prev,
+       livestock: {
+         ...updatedLivestock,
+         livestockCombinedField: livestockCombinedField,
+       },
+     }));
+     
+   };
+   
   const updateNestedField = (parent: string, field: string, value: any) => {
+   
     setForm((prev) => ({
       ...prev,
       [parent]: {
@@ -50,13 +80,24 @@ export default function LandOwnership() {
   };
 
   const toggleCheckbox = (field: string, value: string) => {
-    setForm((prev) => ({
-      ...prev,
-      [field]: prev[field].includes(value)
-        ? prev[field].filter((item: string) => item !== value)
-        : [...prev[field], value],
-    }));
+    setForm((prev) => {
+      const currentValue = typeof prev[field] === "string" ? prev[field] : "";
+      const current = currentValue.split(",").filter(Boolean); // removes empty strings
+  
+      let updated;
+      if (current.includes(value)) {
+        updated = current.filter((item) => item !== value);
+      } else {
+        updated = [...current, value];
+      }
+  
+      return {
+        ...prev,
+        [field]: updated.join(","),
+      };
+    });
   };
+  
   
   const renderCheckboxGroup = (
     field: string,
@@ -82,6 +123,8 @@ export default function LandOwnership() {
       />
     ));
 
+  
+    
   const handleNext = () => {
     setData("landOwnership", form);
     router.push("./landDevelopment");
@@ -116,21 +159,33 @@ export default function LandOwnership() {
       <Text>Rainfed:</Text>
       <TextInput
         value={form.irrigatedLand.rainfed}
-        onChangeText={(text) => updateNestedField("irrigatedLand", "rainfed", text)}
+        onChangeText={(text) => {
+          const rainfed = form.irrigatedLand.rainfed || "0";
+          updateNestedField("irrigatedLand", "rainfed", text)}}
         style={styles.input}
         keyboardType="numeric"
       />
       <Text>Tankfed:</Text>
       <TextInput
         value={form.irrigatedLand.tankfed}
-        onChangeText={(text) => updateNestedField("irrigatedLand", "tankfed", text)}
+        onChangeText={(text) => {
+          const tankfed = form.irrigatedLand.tankfed || "0";
+          updateNestedField("irrigatedLand", "tankfed", text)}}
         style={styles.input}
         keyboardType="numeric"
       />
       <Text>Well Irrigated:</Text>
       <TextInput
         value={form.irrigatedLand.wellIrrigated}
-        onChangeText={(text) => updateNestedField("irrigatedLand", "wellIrrigated", text)}
+        onChangeText={(text) => {
+          const well = form.irrigatedLand.wellIrrigated || "0";
+          const irrigatedLandcombined = `${form.irrigatedLand.rainfed},${form.irrigatedLand.tankfed},${well}`;
+          
+          updateField("irrigatedLandCombined", irrigatedLandcombined);
+          updateNestedField("irrigatedLand", "wellIrrigated", text)
+         
+        }}
+            
         style={styles.input}
         keyboardType="numeric"
       />
@@ -170,43 +225,32 @@ export default function LandOwnership() {
       />
 
       <Text style={styles.question}>29. Crop Season:</Text>
-      {renderCheckboxGroup("cropSeason", ["Kharif", "Rabi", "Other"])}
-
+      {renderCheckboxGroup("cropSeasonCombined", ["Kharif", "Rabi", "Other"])}
       <Text style={styles.question}>30. Livestock at Home:</Text>
 
 <TextInput
   placeholder="Goat"
   value={form.livestock.goat}
-  onChangeText={(text) => updateNestedField("livestock","goat", text)}
-  onBlur={() => {
-    if (form.livestock.goat === "") {
-      updateNestedField("livestock", "goat", "0");
-    }
-  }}
+  onChangeText={(text) => handleLivestockChange("goat", text)}
+  onBlur={() => handleLivestockChange("goat", form.livestock.goat || "0")}
   keyboardType="numeric"
   style={styles.input}
 />
+
 <TextInput
   placeholder="Sheep"
   value={form.livestock.sheep}
-  onChangeText={(text) => updateNestedField("livestock","sheep", text)}
-  onBlur={() => {
-    if (form.livestock.sheep === "") {
-      updateNestedField("livestock", "sheep", "0");
-    }
-  }}
+  onChangeText={(text) => handleLivestockChange("sheep", text)}
+  onBlur={() => handleLivestockChange("sheep", form.livestock.sheep || "0")}
   keyboardType="numeric"
   style={styles.input}
 />
+
 <TextInput
   placeholder="Milch animals"
   value={form.livestock.milchAnimals}
-  onChangeText={(text) => updateNestedField("livestock","milchAnimals", text)}
-  onBlur={() => {
-    if (form.livestock.milchAnimals === "") {
-      updateNestedField("livestock", "milchAnimals", "0");
-    }
-  }}
+  onChangeText={(text) => handleLivestockChange("milchAnimals", text)}
+  onBlur={() => handleLivestockChange("milchAnimals", form.livestock.milchAnimals || "0")}
   keyboardType="numeric"
   style={styles.input}
 />
@@ -214,12 +258,8 @@ export default function LandOwnership() {
 <TextInput
   placeholder="Draught Animals"
   value={form.livestock.draught_animals}
-  onChangeText={(text) => updateNestedField("livestock","draught_animals", text)}
-  onBlur={() => {
-    if (form.livestock.draught_animals === "") {
-      updateNestedField("livestock", "draught_animals", "0");
-    }
-  }}
+  onChangeText={(text) => handleLivestockChange("draught_animals", text)}
+  onBlur={() => handleLivestockChange("draught_animals", form.livestock.draught_animals || "0")}
   keyboardType="numeric"
   style={styles.input}
 />
@@ -227,24 +267,17 @@ export default function LandOwnership() {
 <TextInput
   placeholder="Poultry"
   value={form.livestock.poultry}
-  onChangeText={(text) => updateNestedField("livestock","poultry", text)}
-  onBlur={() => {
-    if (form.livestock.poultry === "") {
-      updateNestedField("livestock", "poultry", "0");
-    }
-  }}
+  onChangeText={(text) => handleLivestockChange("poultry", text)}
+  onBlur={() => handleLivestockChange("poultry", form.livestock.poultry || "0")}
   keyboardType="numeric"
   style={styles.input}
 />
+
 <TextInput
   placeholder="Others"
   value={form.livestock.others}
-  onChangeText={(text) => updateNestedField("livestock","others", text)}
-  onBlur={() => {
-    if (form.livestock.others === "") {
-      updateNestedField("livestock", "others", "0");
-    }
-  }}
+  onChangeText={(text) => handleLivestockChange("others", text)}
+  onBlur={() => handleLivestockChange("others", form.livestock.others || "0")}
   keyboardType="numeric"
   style={styles.input}
 />
