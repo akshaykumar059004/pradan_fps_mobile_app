@@ -11,7 +11,7 @@ const url = Constants.expoConfig.extra.API_URL;
 
 
 export default function LoginScreen() {
-  //const { user, logout } = useUserStore();
+  const user = useUserStore((state) => state.user);
   const setUser = useUserStore((state) => state.setUser);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -33,7 +33,7 @@ export default function LoginScreen() {
     const response = await axios.get(`${url}/api/users/getUserData/${username}`);
     setUser(response.data); 
     setUser({username:response.data.email});// Save the user data in Zustand store
-    //console.log("User data:", response.data.email); // Log the response data
+    //console.log("User data:", user); // Log the response data
     
   };
 
@@ -44,9 +44,10 @@ export default function LoginScreen() {
     if (response.data === 1) { 
       try {
         fetchUserData(username); 
-        //await AsyncStorage.setItem("user", "loggedIn"); // Save the login state in AsyncStorage
+        //await AsyncStorage.setItem("user", u); // Save the login state in AsyncStorage
         await AsyncStorage.setItem("password", password); //WARNING: this is not secure, use JWT
         router.replace("/dashboard");
+        //console.log("User data:", user?.username); 
       } catch (error) {
         Alert.alert("Error", "Failed to save login state."); 
       }

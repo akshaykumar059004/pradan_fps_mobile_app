@@ -1,35 +1,41 @@
-import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useRouter,useLocalSearchParams } from "expo-router";
+import { useState,useEffect } from "react";
 import { View, Text, TextInput, ScrollView, StyleSheet } from "react-native";
-import { Checkbox, Button, IconButton } from "react-native-paper";
+import { Checkbox, Button, IconButton,RadioButton} from "react-native-paper";
+
 import { useFormStore } from "../../storage/useFormStore";
 
 export default function BasicDetails() {
   const router = useRouter();
-  const { data, setData } = useFormStore();
+  const { id, fromPreview,returnTo } = useLocalSearchParams<{ id?: string; fromPreview?: string }>();
+  const { data, submittedForms, setData } = useFormStore();
 
   const [form, setForm] = useState(
     data.basicDetails || {
+      date:"",
       name: "",
+      age: "",
       mobile: "",
-      age:"",
-      district:"",
+      district: "",
       hamlet: "",
       panchayat: "",
       block: "",
       idCardType: "",
       idCardNumber: "",
+      othercard:"",
       gender: "",
       fatherSpouse: "",
       householdType: "",
+      hhcombinedfiled:"",
       adults: "",
       children: "",
-      occupation: [],
+      occupation: { agriculture: "", business: "", other: "" },
       specialCategory: false,
       specialCategoryNumber: "",
       caste: "",
       houseOwnership: "",
       houseType: "",
+      occupationCombinedField:"",
       drinkingWater: [],
       potability: [],
       domesticWater: [],
@@ -38,6 +44,19 @@ export default function BasicDetails() {
       education: "",
     }
   );
+
+  useEffect(() => {
+    if (id && fromPreview === "true") {
+      // Load the form by ID and update current working data
+      const selected = submittedForms.find((form) => form.id === id);
+      if (selected) {
+        // Set every key in the form data
+        Object.entries(selected).forEach(([key, value]) => {
+          setData(key as keyof typeof data, value);
+        });
+      }
+    }
+  }, [id]);
 
   const updateField = (field: string, value: any) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -54,7 +73,12 @@ export default function BasicDetails() {
 
   const handleNext = () => {
     setData("basicDetails", form);
-    router.push("./landOwnership");
+    if (fromPreview && returnTo) {
+     
+      router.push({ pathname: returnTo, params: { id } });
+    } else {
+      router.push("/landform/landOwnership");
+    }
   };
 
   const renderCheckboxGroup = (
@@ -83,23 +107,40 @@ export default function BasicDetails() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-        <IconButton
-        icon="arrow-left"
-        size={24}
-    
-        onPress={() => router.back()}
-      />
+      <IconButton icon="arrow-left" size={24} onPress={() => router.back()} />
+
       <Text style={styles.title}>Plantation Form</Text>
       <Text style={styles.subtitle}>Basic Details</Text>
+      <Text style={styles.question}>Date:</Text>
+<TextInput
+  value={form.date}
+  onChangeText={(text) => {
+    // Remove anything that's not a number
+    let filteredText = text.replace(/[^0-9]/g, '');
 
-      {/* Existing Questions */}
+    // Format as DD/MM/YYYY
+    if (filteredText.length > 2 && filteredText.length <= 4) {
+      filteredText = filteredText.slice(0, 2) + '/' + filteredText.slice(2);
+    } else if (filteredText.length > 4) {
+      filteredText = filteredText.slice(0, 2) + '/' + filteredText.slice(2, 4) + '/' + filteredText.slice(4, 8);
+    }
+
+    updateField("date", filteredText);
+  }}
+  style={styles.input}
+  placeholder="DD/MM/YYYY"
+  keyboardType="numeric"
+/>
+
+
+      {/* Inputs */}
       <Text style={styles.question}>1. Name of Farmer:</Text>
       <TextInput
         value={form.name}
-        onChangeText={(text) => setForm({ ...form, name: text })}
+        onChangeText={(text) => updateField("name", text)}
         style={styles.input}
       />
- <Text style={styles.question}>1-2. Age:</Text>
+     <Text style={styles.question}>1-2. Age:</Text>
       <TextInput
         value={form.age}
         onChangeText={(text) => updateField("age", text)}
@@ -137,202 +178,331 @@ export default function BasicDetails() {
         onChangeText={(text) => updateField("hamlet", text)}
         style={styles.input}
       />
+     <Text style={styles.question}>6. Identity Card:</Text>
+<RadioButton.Group
+  onValueChange={(value) => updateField("idCardType", value)}
+  value={form.idCardType}
+>
+  <RadioButton.Item label="Aadhar" value="Aadhar" />
+  <RadioButton.Item label="EPIC" value="EPIC" />
+  <RadioButton.Item label="Driving License" value="Driving License" />
+  <RadioButton.Item label="Other" value="Other" />
+</RadioButton.Group>
+{form.idCardType === "Other" && (
+  <TextInput
+    value={form.othercard}
+    onChangeText={(text) => updateField("othercard", text)}
+    style={styles.input}
+    placeholder="Specify Identity Card"
+  />
+)}
 
-      <Text style={styles.question}>6. Identity Card:</Text>
-      {["Aadhar", "EPIC", "Driving License"].map((item) => (
-        <Checkbox.Item
-          key={item}
-          label={item}
-          status={form.idCardType === item ? "checked" : "unchecked"}
-          onPress={() => setForm({ ...form, idCardType: item })}
-        />
-      ))}
 
       <Text style={styles.question}>7. ID Card Number:</Text>
       <TextInput
         value={form.idCardNumber}
-        onChangeText={(text) => setForm({ ...form, idCardNumber: text })}
+        onChangeText={(text) => updateField("idCardNumber", text)}
         style={styles.input}
       />
 
-      <Text style={styles.question}>8. Gender:</Text>
-      {["Male", "Female", "Transgender"].map((item) => (
-        <Checkbox.Item
-          key={item}
-          label={item}
-          status={form.gender === item ? "checked" : "unchecked"}
-          onPress={() => setForm({ ...form, gender: item })}
-        />
-      ))}
+<Text style={styles.question}>8. Gender:</Text>
+<RadioButton.Group
+  onValueChange={(value) => updateField("gender", value)}
+  value={form.gender}
+>
+  <RadioButton.Item label="Male" value="Male" />
+  <RadioButton.Item label="Female" value="Female" />
+  <RadioButton.Item label="Transgender" value="Transgender" />
+</RadioButton.Group>
+
 
       <Text style={styles.question}>9. Father / Spouse Name:</Text>
       <TextInput
         value={form.fatherSpouse}
-        onChangeText={(text) => setForm({ ...form, fatherSpouse: text })}
+        onChangeText={(text) => updateField("fatherSpouse", text)}
         style={styles.input}
       />
 
-      <Text style={styles.question}>10. Type of Household:</Text>
-      {["Nuclear", "Joint"].map((item) => (
-        <Checkbox.Item
-          key={item}
-          label={item}
-          status={form.householdType === item ? "checked" : "unchecked"}
-          onPress={() => setForm({ ...form, householdType: item })}
-        />
-      ))}
-
-      <Text style={styles.question}>11. Household Members:</Text>
-      <Text style={styles.question}>Adult:</Text>
+<Text style={styles.question}>10. Type of Household:</Text>
+<RadioButton.Group
+  onValueChange={(value) => updateField("householdType", value)}
+  value={form.householdType}
+>
+  <RadioButton.Item label="Nuclear" value="Nuclear" />
+  <RadioButton.Item label="Joint" value="Joint" />
+</RadioButton.Group>
+<Text style={styles.question}>11. Household Members:</Text>
       <TextInput
-      
         value={form.adults}
-        onChangeText={(text) => setForm({ ...form, adults: text })}
+        onChangeText={(text) => updateField("adults", text)}
         style={styles.input}
         placeholder="Adults"
         keyboardType="numeric"
       />
-      <Text style={styles.question}>children:</Text>
       <TextInput
         value={form.children}
-        onChangeText={(text) => setForm({ ...form, children: text })}
+        onChangeText={(text) => updateField("children", text)}
         style={styles.input}
         placeholder="Children"
         keyboardType="numeric"
       />
+<Text style={styles.question}>13. Household Members:</Text>
 
-      <Text style={styles.question}>12. Occupation of Household Members:</Text>
-      {["Agriculture", "Business", "Other"].map((item) => (
-        <Checkbox.Item
-          key={item}
-          label={item}
-          status={form.occupation.includes(item) ? "checked" : "unchecked"}
-          onPress={() => toggleCheckbox("occupation", item)}
-        />
-      ))}
+<TextInput
+  value={form.adults}
+  onChangeText={(text) => {
+    // Allow only numbers, less than 50
+    let filteredText = text.replace(/[^0-9]/g, '');
+    if (parseInt(filteredText) > 50) filteredText = '50';
+    
+    // Update both fields and store them in a single variable
+    const updatedAdults = filteredText;
+    const updatedChildren = form.children; // or get children value here
+    
+    // Combine both values and update a single field
+    const hhcombinedfiled = `${updatedAdults},${updatedChildren}`;
+    updateField("hhcombinedfiled", hhcombinedfiled); // Save combined value in a single field
+    updateField("adults", updatedAdults); // Optionally, keep adults separate
+  }}
+  style={styles.input}
+  placeholder="Adults"
+  keyboardType="numeric"
+/>
 
-      <Text style={styles.question}>13. Special Category:</Text>
-      <Checkbox.Item
-        label="Disabled"
-        status={form.specialCategory ? "checked" : "unchecked"}
-        onPress={() => setForm({ ...form, specialCategory: !form.specialCategory })}
-      />
-      {form.specialCategory && (
-        <TextInput
-          value={form.specialCategoryNumber}
-          onChangeText={(text) => setForm({ ...form, specialCategoryNumber: text })}
-          style={styles.input}
-          placeholder="Number of Disabled Persons"
-          keyboardType="numeric"
-        />
-      )}
+<TextInput
+  value={form.children}
+  onChangeText={(text) => {
+    let filteredText = text.replace(/[^0-9]/g, '');
+    if (parseInt(filteredText) > 50) filteredText = '50';
+    
+    // Update both fields and store them in a single variable
+    const updatedChildren = filteredText;
+    const updatedAdults = form.adults; // or get adults value here
+    
+    // Combine both values and update a single field
+    const hhcombinedfiled = `${updatedAdults},${updatedChildren}`;
+    updateField("hhcombinedfiled", hhcombinedfiled); // Save combined value in a single field
+    updateField("children", updatedChildren); // Optionally, keep children separate
+  }}
+  style={styles.input}
+  placeholder="Children"
+  keyboardType="numeric"
+/>
 
-      <Text style={styles.question}>14. Caste:</Text>
-      {["OC", "OBC", "SC", "ST"].map((item) => (
-        <Checkbox.Item
-          key={item}
-          label={item}
-          status={form.caste === item ? "checked" : "unchecked"}
-          onPress={() => setForm({ ...form, caste: item })}
-        />
-      ))}
 
-      <Text style={styles.question}>15. House Ownership:</Text>
-      {["Rented", "Owned"].map((item) => (
-        <Checkbox.Item
-          key={item}
-          label={item}
-          status={form.houseOwnership === item ? "checked" : "unchecked"}
-          onPress={() => setForm({ ...form, houseOwnership: item })}
-        />
-      ))}
+<Text style={styles.question}>14. Occupation of Household Members (No. of persons):</Text>
 
-      <Text style={styles.question}>16. Type of House:</Text>
-      {["Pucca", "Kutcha"].map((item) => (
-        <Checkbox.Item
-          key={item}
-          label={item}
-          status={form.houseType === item ? "checked" : "unchecked"}
-          onPress={() => setForm({ ...form, houseType: item })}
-        />
-      ))}
+<TextInput
+  value={form.occupation.agriculture}
+  onChangeText={(text) => {
+    let filteredText = text.replace(/[^0-9]/g, '');
+    if (parseInt(filteredText) > 50) filteredText = '50';
+
+    const updatedAgriculture = filteredText;
+    const updatedBusiness = form.occupation.business;
+    const updatedOther = form.occupation.other;
+
+    const occupationCombinedField = `${updatedAgriculture},${updatedBusiness},${updatedOther}`;
+
+    setForm((prev) => ({
+      ...prev,
+      occupation: {
+        ...prev.occupation,
+        agriculture: updatedAgriculture,
+        occupationCombinedField: occupationCombinedField,
+      },
+    }));
+  }}
+  style={[
+    styles.input,
+    form.occupation.agriculture !== '' && parseInt(form.occupation.agriculture) > 50 && {
+      borderColor: 'red',
+      borderWidth: 1,
+    },
+  ]}
+  placeholder="Agriculture"
+  keyboardType="numeric"
+/>
+{form.occupation.agriculture !== '' && parseInt(form.occupation.agriculture) > 50 && (
+  <Text style={{ color: 'red', fontSize: 12 }}>Cannot exceed 50</Text>
+)}
+
+<TextInput
+  value={form.occupation.business}
+  onChangeText={(text) => {
+    let filteredText = text.replace(/[^0-9]/g, '');
+    if (parseInt(filteredText) > 50) filteredText = '50';
+
+    const updatedBusiness = filteredText;
+    const updatedAgriculture = form.occupation.agriculture;
+    const updatedOther = form.occupation.other;
+
+    const occupationCombinedField = `${updatedAgriculture},${updatedBusiness},${updatedOther}`;
+
+    setForm((prev) => ({
+      ...prev,
+      occupation: {
+        ...prev.occupation,
+        business: updatedBusiness,
+        occupationCombinedField: occupationCombinedField,
+      },
+    }));
+  }}
+  style={[
+    styles.input,
+    form.occupation.business !== '' && parseInt(form.occupation.business) > 50 && {
+      borderColor: 'red',
+      borderWidth: 1,
+    },
+  ]}
+  placeholder="Business"
+  keyboardType="numeric"
+/>
+{form.occupation.business !== '' && parseInt(form.occupation.business) > 50 && (
+  <Text style={{ color: 'red', fontSize: 12 }}>Cannot exceed 50</Text>
+)}
+
+<TextInput
+  value={form.occupation.other}
+  onChangeText={(text) => {
+    let filteredText = text.replace(/[^0-9]/g, '');
+    if (parseInt(filteredText) > 50) filteredText = '50';
+
+    const updatedOther = filteredText;
+    const updatedAgriculture = form.occupation.agriculture;
+    const updatedBusiness = form.occupation.business;
+
+    const occupationCombinedField = `${updatedAgriculture},${updatedBusiness},${updatedOther}`;
+
+    setForm((prev) => ({
+      ...prev,
+      occupation: {
+        ...prev.occupation,
+        other: updatedOther,
+        occupationCombinedField: occupationCombinedField,
+      },
+    }));
+  }}
+  style={[
+    styles.input,
+    form.occupation.other !== '' && parseInt(form.occupation.other) > 50 && {
+      borderColor: 'red',
+      borderWidth: 1,
+    },
+  ]}
+  placeholder="Other"
+  keyboardType="numeric"
+/>
+{form.occupation.other !== '' && parseInt(form.occupation.other) > 50 && (
+  <Text style={{ color: 'red', fontSize: 12 }}>Cannot exceed 50</Text>
+)}
+
+
+<Text style={styles.question}>14. Caste:</Text>
+<RadioButton.Group
+  onValueChange={(value) => updateField("caste", value)}
+  value={form.caste}
+>
+  <RadioButton.Item label="OC" value="OC" />
+  <RadioButton.Item label="OBC" value="OBC" />
+  <RadioButton.Item label="SC" value="SC" />
+  <RadioButton.Item label="ST" value="ST" />
+</RadioButton.Group>
+
+
+<Text style={styles.question}>15. House Ownership:</Text>
+<RadioButton.Group
+  onValueChange={(value) => updateField("houseOwnership", value)}
+  value={form.houseOwnership}
+>
+  <RadioButton.Item label="Rented" value="Rented" />
+  <RadioButton.Item label="Owned" value="Owned" />
+</RadioButton.Group>
+
+<Text style={styles.question}>16. Type of House:</Text>
+<RadioButton.Group
+  onValueChange={(value) => updateField("houseType", value)}
+  value={form.houseType}
+>
+  <RadioButton.Item label="Pucca" value="pucca" />
+  <RadioButton.Item label="Kutcha" value="kutcha" />
+</RadioButton.Group>
+
       <Text style={styles.question}>17. Drinking Water Source:</Text>
-      {["Ponds", "Well & Borewells", "Trucks"].map((item) => (
-        <Checkbox.Item
-          key={item}
-          label={item}
-          status={form.drinkingWater.includes(item) ? "checked" : "unchecked"}
-          onPress={() => toggleCheckbox("drinkingWater", item)}
-        />
-      ))}
+      {renderCheckboxGroup("drinkingWater", ["Ponds", "Well & Borewells", "Trucks"])}
 
-      {/* Potability */}
       <Text style={styles.question}>18. Potability:</Text>
-      {["Ponds", "Tanks", "Well & Borewells"].map((item) => (
-        <Checkbox.Item
-          key={item}
-          label={item}
-          status={form.potability.includes(item) ? "checked" : "unchecked"}
-          onPress={() => toggleCheckbox("potability", item)}
-        />
-      ))}
+      {renderCheckboxGroup("potability", ["Ponds", "Tanks", "Well & Borewells"])}
 
-      {/* Domestic Water Source */}
       <Text style={styles.question}>19. Domestic Water Source:</Text>
-      {["Ponds", "Tanks", "Well & Borewells"].map((item) => (
-        <Checkbox.Item
-          key={item}
-          label={item}
-          status={form.domesticWater.includes(item) ? "checked" : "unchecked"}
-          onPress={() => toggleCheckbox("domesticWater", item)}
-        />
-      ))}
+      {renderCheckboxGroup("domesticWater", ["Ponds", "Tanks", "Well & Borewells"])}
 
-      {/* Toilet Availability */}
       <Text style={styles.question}>20. Toilet Availability:</Text>
-      {["Yes", "No"].map((item) => (
-        <Checkbox.Item
-          key={item}
-          label={item}
-          status={form.toiletAvailability === item ? "checked" : "unchecked"}
-          onPress={() => setForm({ ...form, toiletAvailability: item })}
-        />
-      ))}
+<RadioButton.Group
+  onValueChange={(value) => updateField("toiletAvailability", value)}
+  value={form.toiletAvailability}
+>
+  <RadioButton.Item label="Yes" value="Yes" />
+  <RadioButton.Item label="No" value="No" />
+</RadioButton.Group>
+      
+<Text style={styles.question}>21. Toilet Condition:</Text>
+<RadioButton.Group
+  onValueChange={(value) => updateField("toiletCondition", value)}
+  value={form.toiletCondition}
+>
+  <RadioButton.Item label="Yes" value="yes" />
+  <RadioButton.Item label="No" value="no" />
+</RadioButton.Group>
 
-      {/* Toilet Condition */}
-      <Text style={styles.question}>21. Toilet Condition:</Text>
-      {["Working", "Not Working"].map((item) => (
-        <Checkbox.Item
-          key={item}
-          label={item}
-          status={form.toiletCondition === item ? "checked" : "unchecked"}
-          onPress={() => setForm({ ...form, toiletCondition: item })}
-        />
-      ))}
-
-      {/* Education of Householder */}
       <Text style={styles.question}>22. Education of Householder:</Text>
-      {["Illiterate", "Primary", "Secondary", "University"].map((item) => (
-        <Checkbox.Item
-          key={item}
-          label={item}
-          status={form.education === item ? "checked" : "unchecked"}
-          onPress={() => setForm({ ...form, education: item })}
-        />
-      ))}
+<RadioButton.Group
+  onValueChange={(value) => updateField("education", value)}
+  value={form.education}
+>
+  <RadioButton.Item label="Illiterate" value="Illiterate" />
+  <RadioButton.Item label="Primary" value="Primary" />
+  <RadioButton.Item label="Secondary" value="Secondary" />
+  <RadioButton.Item label="University" value="University" />
+</RadioButton.Group>
+
 
       <Button mode="contained" onPress={handleNext} style={styles.button}>
-        Next
+      {fromPreview ? "Preview" : "Next"}
       </Button>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 20 },
-  title: { fontSize: 24, fontWeight: "bold", textAlign: "center" },
-  subtitle: { fontSize: 18, fontWeight: "600", textAlign: "center", marginBottom: 20 },
-  question: { fontWeight: "bold", marginTop: 10 },
-  input: { borderWidth: 1, padding: 10, marginBottom: 10, borderRadius: 5 },
-  button: { marginTop: 20 },
+  container: {
+    padding: 20,
+    paddingBottom: 40,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  subtitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  question: {
+    fontWeight: "bold",
+    marginTop: 10,
+    marginBottom: 5,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    padding: 10,
+    marginBottom: 10,
+    borderRadius: 5,
+  },
+  button: {
+    marginTop: 30,
+  },
 });

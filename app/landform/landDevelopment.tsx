@@ -3,8 +3,10 @@ import { useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { Text, TextInput, Checkbox, Button, IconButton } from "react-native-paper";
 import { useFormStore } from "../../storage/useFormStore";
+import { useUserStore } from "@/storage/userDataStore";
 
 export default function LandDevelopment() {
+  const {user, setUser} = useUserStore();
   const router = useRouter();
   const { data, setData } = useFormStore();
 
@@ -80,6 +82,8 @@ export default function LandDevelopment() {
 
     const handleNext = () => {
       setData("landDevelopment", form);
+      setData("username",user?.username);
+      setData("formType", "LAND");
       setTimeout(() => {
         router.push("./bankDetails");
       }, 50); // 100ms delay is usually enough

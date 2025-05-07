@@ -5,10 +5,12 @@ import { Checkbox, Button, IconButton  } from "react-native-paper";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
 import { useFormStore } from "../../storage/useFormStore";
+import { useUserStore } from "@/storage/userDataStore";
 import { Picker } from "@react-native-picker/picker";
 
 
 export default function BankDetails() {
+  const user = useUserStore();
   const router = useRouter();
   const { data, setData } = useFormStore();
 
@@ -31,6 +33,8 @@ export default function BankDetails() {
       },
     }
   );
+
+  
 
   const updateField = (field: string, value: any) => {
     setForm((prev) => ({ ...prev, [field]: value }));

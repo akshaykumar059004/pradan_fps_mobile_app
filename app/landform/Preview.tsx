@@ -3,8 +3,15 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { ScrollView, StyleSheet, Alert, View,Image } from "react-native";
 import { Card, Text, Button, Divider, IconButton } from "react-native-paper";
 import { useFormStore } from "../../storage/useFormStore";
+import axios from "axios";
+import Constants from "expo-constants";
+import { useUserStore } from '../../storage/userDataStore';
+
+const url = Constants.expoConfig.extra.API_URL;
 
 export default function Preview() {
+  //const url = Constants.expoConfig.extra.API_URL;
+  const {user} = useUserStore();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const { data, submittedForms, setData, submitForm } = useFormStore();
@@ -37,13 +44,17 @@ const handleSubmit = async () => {
     setSubmitting(true);
 
     // Prepare formType and formStatus up front
-    const userStatus = data.bankDetails?.formStatus || "Not Filled";
-    setData("formType", "LAND");
-    setData("formStatus", userStatus);
+    //const userStatus = data.bankDetails?.formStatus || "Not Filled";
+    
+    // setData("formStatus", userStatus);
+   // setData("username", user?.username);
 
     // Wait a tick to ensure the state is updated in Zustand
-    await new Promise((resolve) => setTimeout(resolve, 50));
-    console.log("Form data before submission:", data);
+    //await new Promise((resolve) => setTimeout(resolve, 50));
+    //console.log("Form data before submission:", user?.username);
+    //const username = user?.username;
+    await axios.post(`${url}/api/formData/postLandformData`, data);
+
     // Now submit safely
     await submitForm();
 

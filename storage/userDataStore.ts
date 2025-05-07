@@ -12,13 +12,13 @@ interface userData {
 }
 
 interface UserStore {
-  user: userData | null;
+  user: userData;
   setUser: (user: Partial<userData>) => void;
   logout: () => void;
 }
 
 export const useUserStore = create<UserStore>((set) => ({
-  user: null,
+  user: {},
 
   setUser: (updatedFields: Partial<userData>) =>
     set((state) => ({
@@ -28,5 +28,5 @@ export const useUserStore = create<UserStore>((set) => ({
       },
     })),
 
-  logout: () => set({ user: null }),
+  logout: () => set({ user: {} }),
 }));

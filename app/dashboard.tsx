@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useUserStore } from '../storage/userDataStore';
+import { useFormStore } from "../storage/useFormStore";
 import { FormStatus_totalCount, FormStatus_todayCount } from "../storage/useFormStore";
 import {
   View,
@@ -28,6 +29,7 @@ const DashboardScreen: React.FC = () => {
   const url = Constants.expoConfig.extra.API_URL;
   
   const { user} = useUserStore();
+  const {setData} = useFormStore();
   const { setStatus_totalCount, resetStatus_totalCount, status_total } = FormStatus_totalCount(); //global Zustand store for total count of forms
   const {setStatus_todayCount, resetStatus_todayCount, status_today } = FormStatus_todayCount(); //global Zustand store for today's count of forms
   const [modalVisible, setModalVisible] = useState(false);
@@ -44,6 +46,8 @@ const DashboardScreen: React.FC = () => {
     try {
       const dashborad_status_count_response_total = await axios.get(`${url}/api/dashboard/getTotalFormsStatusCount/${userId}`);
       const dashborad_status_count_response_today = await axios.get(`${url}/api/dashboard/getTodayFormsStatusCount/${userId}`);
+
+      setData("id",user?.id);
      // console.log("Dashboard Status Count:", dashborad_status_count_response_today.data);
 
      //convert the array of objects to a map for easy access
@@ -85,7 +89,7 @@ const DashboardScreen: React.FC = () => {
   }
   useEffect(() => {
     if (user?.id) {
-      fetchDashboardData(user.id);
+      fetchDashboardData(user?.id);
     }
     return () => {
       resetStatus_todayCount();
@@ -226,7 +230,7 @@ const DashboardScreen: React.FC = () => {
   //pageIndex = 0 for Pre and pageIndex = 1 for Post
   //activeTab = Today or Total
   const currentData = useMemo(() => {
-    // console.log("Page Index:", pageIndex);
+    //console.log("Page Index:", pageIndex);
     // console.log("Active Tab:", activeTab);
     if (pageIndex === 0) {
       return activeTab === 'Today'
@@ -239,7 +243,7 @@ const DashboardScreen: React.FC = () => {
     }
   }, [pageIndex, activeTab]);
 
- // console.log("Current Data:", currentData);
+  //console.log("Current Data:", currentData);
 
 
    const toggleTab = (tab: string) => {
